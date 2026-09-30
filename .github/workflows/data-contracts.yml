@@ -1,13 +1,9 @@
 name: data-contracts
 
 on:
+  # Sin filtro de rutas: el check es obligatorio en main y debe reportar en todo PR,
+  # o los PRs que no tocan contratos quedarían esperándolo indefinidamente.
   pull_request:
-    paths:
-      - "alcance/**"
-      - "contracts/**"
-      - "data/sample/**"
-      - "scripts/**"
-      - ".github/workflows/data-contracts.yml"
   push:
     branches: [main]
     paths:

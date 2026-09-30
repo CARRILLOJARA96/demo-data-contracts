@@ -75,7 +75,7 @@ git remote add origin git@github.com:<tu-usuario>/demo-data-contracts.git
 git push -u origin main
 ```
 
-El workflow corre solo en cada PR que toque `alcance/`, `contracts/`, `data/sample/` o `scripts/`.
+El workflow corre en cada PR (y en cada push a `main` que toque `alcance/` o `contracts/`).
 Para verlo funcionar:
 
 - **PR compatible**: abre el Excel, agrega una fila opcional en la hoja `Schema ded_tarifario_prestacion`,
