@@ -43,8 +43,8 @@ La **fuente de verdad es el Excel** (`alcance/`). El YAML (`contracts/`) se gene
   tarifa > 0, fin de vigencia ≥ inicio, tabla no vacía.
 - **Propiedades propias del framework** (`customProperties`): `capa`, `flujo`, `subdominio`, `frecuenciaCarga`.
 - **Servidores**: `local` (CSV + DuckDB), `gate` (DataFrame de Spark) y un servidor Databricks por ambiente:
-  `desa` → `desa_landing.tarifarios` y `prod` → `prod_landing.tarifarios`.
-  Convención: catálogo `<ambiente>_<capa>`, esquema `<subdominio>` (se valida al desplegar).
+  `desa` → `desa_landing.prestaciones_tarifarios` y `prod` → `prod_landing.prestaciones_tarifarios`.
+  Convención: catálogo `<ambiente>_<capa>`, esquema `<dominio>_<subdominio>` (campo `domain` + customProperty `subdominio`); se valida al desplegar.
 
 ---
 
@@ -101,7 +101,7 @@ Probado en **Databricks Free Edition** (serverless).
 2. **Clonar el repo** en el workspace: *Workspace → Create → Git folder* → URL HTTPS de tu repo.
 3. **Cómputo**: serverless (o un cluster con Databricks Runtime 15.4 LTS o superior), con acceso a PyPI.
 4. **Abrir** `databricks/demo_data_contract_ded`, elegir los widgets y **Run all**:
-   - `ambiente`: `desa` o `prod` (servidor del contrato → tabla `<ambiente>_landing.tarifarios.ded_tarifario_prestacion`).
+   - `ambiente`: `desa` o `prod` (servidor del contrato → tabla `<ambiente>_landing.prestaciones_tarifarios.ded_tarifario_prestacion`).
    - `escenario`: `ok` o `errores`.
 
 | Escenario | Qué pasa |

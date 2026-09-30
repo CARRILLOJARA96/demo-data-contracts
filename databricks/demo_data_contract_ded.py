@@ -11,7 +11,7 @@
 # MAGIC 4. **Validación post-carga** → vuelve a validar el contrato contra la tabla física.
 # MAGIC
 # MAGIC Widgets: **ambiente** (`desa` / `prod`, servidor del contrato) y **escenario** (`ok` / `errores`).
-# MAGIC La tabla destino sale del contrato: `<ambiente>_<capa>.<subdominio>.<tabla>`.
+# MAGIC La tabla destino sale del contrato: `<ambiente>_<capa>.<dominio>_<subdominio>.<tabla>`.
 # MAGIC
 # MAGIC > Datos 100% sintéticos. Requiere que el repo esté clonado como Git folder en el workspace.
 

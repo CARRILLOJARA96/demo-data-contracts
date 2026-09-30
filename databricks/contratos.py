@@ -1,8 +1,8 @@
 """Utilidades para aplicar un contrato ODCS en Databricks, reutilizables por cualquier capa.
 
 Convención de nombres (se valida contra el contrato):
-    catálogo = <ambiente>_<capa>   (customProperty `capa`)
-    esquema  = <subdominio>        (customProperty `subdominio`)
+    catálogo = <ambiente>_<capa>          (customProperty `capa`)
+    esquema  = <dominio>_<subdominio>     (campo ODCS `domain` + customProperty `subdominio`)
 El servidor del contrato con id = <ambiente> (p. ej. `desa`, `prod`) declara ese catálogo y esquema.
 """
 
@@ -27,11 +27,11 @@ def cargar_contrato(ruta, ambiente):
         raise ContratoError(f"El contrato {contrato['id']} no declara un servidor databricks '{ambiente}'.")
 
     props = {p["property"]: p["value"] for p in contrato.get("customProperties", [])}
-    esperado = (f"{ambiente}_{props.get('capa')}", props.get("subdominio"))
+    esperado = (f"{ambiente}_{props.get('capa')}", f"{contrato.get('domain')}_{props.get('subdominio')}")
     if (servidor["catalog"], servidor["schema"]) != esperado:
         raise ContratoError(
             f"El servidor '{ambiente}' apunta a {servidor['catalog']}.{servidor['schema']}, "
-            f"pero la convención exige {esperado[0]}.{esperado[1]} (<ambiente>_<capa>.<subdominio>)."
+            f"pero la convención exige {esperado[0]}.{esperado[1]} (<ambiente>_<capa>.<dominio>_<subdominio>)."
         )
 
     modelo = contrato["schema"][0]
