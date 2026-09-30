@@ -27,13 +27,20 @@ servers:
   customProperties:
   - property: customType
     value: dataframe
-- id: databricks_dev
-  server: databricks_dev
+- id: desa
+  server: desa
   type: databricks
-  description: Ambiente de pruebas en Databricks (Unity Catalog).
-  environment: dev
-  catalog: workspace
-  schema: landing_ded
+  description: Ambiente de desarrollo en Databricks (Unity Catalog).
+  environment: desa
+  catalog: desa_landing
+  schema: tarifarios
+- id: prod
+  server: prod
+  type: databricks
+  description: Ambiente productivo en Databricks (Unity Catalog).
+  environment: prod
+  catalog: prod_landing
+  schema: tarifarios
 dataProduct: tarifario_prestaciones
 description:
   usage: Insumo para valorizar atenciones en trusted/enriched. Una fila es una tarifa

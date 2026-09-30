@@ -1,6 +1,6 @@
 -- Data Contract: landing_ded_tarifario_prestacion
 -- SQL Dialect: databricks
-CREATE OR REPLACE TABLE workspace.landing_ded.ded_tarifario_prestacion (
+CREATE OR REPLACE TABLE desa_landing.tarifarios.ded_tarifario_prestacion (
   cod_clinica STRING not null COMMENT "Código interno de la clínica (formato CL + 3 dígitos).",
   nom_clinica STRING not null COMMENT "Nombre comercial de la clínica.",
   cod_prestacion STRING not null COMMENT "Código de la prestación médica según catálogo interno.",

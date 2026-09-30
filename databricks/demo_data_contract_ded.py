@@ -4,18 +4,20 @@
 # MAGIC
 # MAGIC Flujo que demuestra este notebook, todo derivado del contrato ODCS del repo:
 # MAGIC
-# MAGIC 1. **DDL desde el contrato** → crea la tabla en Unity Catalog (tipos, NOT NULL, PK, comentarios).
+# MAGIC 1. **Estructura desde el contrato** → crea la tabla si no existe; si existe, solo agrega columnas opcionales
+# MAGIC    nuevas. Nunca la recrea: una carga fallida no borra los datos vigentes.
 # MAGIC 2. **Quality gate** → valida el DataFrame *antes* de escribir. Si falla, no se publica nada.
-# MAGIC 3. **Carga** → escribe la tabla solo si el gate pasó.
+# MAGIC 3. **Carga** → reemplaza el contenido de la tabla solo si el gate pasó.
 # MAGIC 4. **Validación post-carga** → vuelve a validar el contrato contra la tabla física.
 # MAGIC
-# MAGIC Usa el widget **escenario** para cargar datos correctos (`ok`) o con errores (`errores`).
+# MAGIC Widgets: **ambiente** (`desa` / `prod`, servidor del contrato) y **escenario** (`ok` / `errores`).
+# MAGIC La tabla destino sale del contrato: `<ambiente>_<capa>.<subdominio>.<tabla>`.
 # MAGIC
 # MAGIC > Datos 100% sintéticos. Requiere que el repo esté clonado como Git folder en el workspace.
 
 # COMMAND ----------
 
-# MAGIC %pip install -q "datacontract-cli[databricks]==1.2.2"
+# MAGIC %pip install -q "datacontract-cli[databricks]==1.2.2" "pandas>=2.2,<3"
 
 # COMMAND ----------
 
@@ -23,80 +25,47 @@ dbutils.library.restartPython()
 
 # COMMAND ----------
 
-dbutils.widgets.text("catalog", "workspace", "Catálogo UC")
-dbutils.widgets.text("schema", "landing_ded", "Esquema")
+dbutils.widgets.dropdown("ambiente", "desa", ["desa", "prod"], "Ambiente")
 dbutils.widgets.dropdown("escenario", "ok", ["ok", "errores"], "Datos a cargar")
 
-CATALOG = dbutils.widgets.get("catalog")
-SCHEMA = dbutils.widgets.get("schema")
+AMBIENTE = dbutils.widgets.get("ambiente")
 ESCENARIO = dbutils.widgets.get("escenario")
-print(f"catálogo={CATALOG} | esquema={SCHEMA} | escenario={ESCENARIO}")
 
 # COMMAND ----------
 
-# MAGIC %md ## 0. Leer el contrato del repo
+# MAGIC %md ## 0. Leer el contrato del repo y resolver la tabla destino
 
 # COMMAND ----------
 
 import os
 
 import pandas as pd
-import yaml
-from datacontract.data_contract import DataContract
+from pyspark.sql.types import StringType, StructField, StructType
+
+import contratos  # databricks/contratos.py, junto a este notebook
 
 # El notebook vive en <repo>/databricks/, el contrato en <repo>/contracts/
 REPO_ROOT = os.path.abspath(os.path.join(os.getcwd(), ".."))
-CONTRACT_PATH = os.path.join(REPO_ROOT, "contracts", "landing_ded", "ded_tarifario_prestacion.odcs.yaml")
-
-with open(CONTRACT_PATH, encoding="utf-8") as f:
-    contract = yaml.safe_load(f)
-
-# El catálogo/esquema del ambiente se toman de los widgets, no del YAML
-for server in contract["servers"]:
-    if server["server"] == "databricks_dev":
-        server["catalog"] = CATALOG
-        server["schema"] = SCHEMA
-
-CONTRACT_STR = yaml.safe_dump(contract, allow_unicode=True, sort_keys=False)
-MODEL = contract["schema"][0]
-TABLE = MODEL["physicalName"]
-FQN = f"{CATALOG}.{SCHEMA}.{TABLE}"
-
-print(f"Contrato: {contract['id']} v{contract['version']} ({contract['status']})")
-print(f"Tabla destino: {FQN}")
-
-
-def mostrar_resultado(run, titulo):
-    """Muestra los checks de un run del CLI y devuelve True si pasó."""
-    filas = [
-        {
-            "resultado": str(c.result.value if hasattr(c.result, "value") else c.result),
-            "check": c.name,
-            "campo": c.field,
-            "detalle": c.reason,
-        }
-        for c in run.checks
-    ]
-    resumen = pd.DataFrame(filas)
-    fallidos = resumen[resumen["resultado"] != "passed"]
-    estado = "🟢 CUMPLE" if run.has_passed() else "🔴 NO CUMPLE"
-    print(f"{titulo}: {estado} — {len(resumen)} checks, {len(fallidos)} fallidos")
-    display(fallidos if len(fallidos) else resumen)
-    return run.has_passed()
-
-# COMMAND ----------
-
-# MAGIC %md ## 1. DDL generado desde el contrato
-
-# COMMAND ----------
-
-ddl = DataContract(data_contract_str=CONTRACT_STR, server="databricks_dev").export(
-    "sql", sql_server_type="databricks"
+c = contratos.cargar_contrato(
+    os.path.join(REPO_ROOT, "contracts", "landing_ded", "ded_tarifario_prestacion.odcs.yaml"), AMBIENTE
 )
-print(ddl)
+print(f"Contrato: {c['contrato']['id']} v{c['contrato']['version']} ({c['contrato']['status']})")
+print(f"Ambiente: {AMBIENTE} | escenario: {ESCENARIO} | tabla destino: {c['fqn']}")
 
-spark.sql(f"CREATE SCHEMA IF NOT EXISTS {CATALOG}.{SCHEMA}")
-spark.sql(ddl.strip().rstrip(";"))  # CREATE OR REPLACE: la demo recrea la tabla en cada corrida
+
+def mostrar(titulo, paso, resumen):
+    fallidos = resumen[resumen["resultado"] != "passed"]
+    print(f"{titulo}: {'🟢 CUMPLE' if paso else '🔴 NO CUMPLE'} — {len(resumen)} checks, {len(fallidos)} fallidos")
+    display(fallidos if len(fallidos) else resumen)
+
+# COMMAND ----------
+
+# MAGIC %md ## 1. Estructura de la tabla desde el contrato (idempotente, no destructiva)
+
+# COMMAND ----------
+
+for accion in contratos.asegurar_tabla(spark, c):
+    print(accion)
 
 # COMMAND ----------
 
@@ -104,19 +73,12 @@ spark.sql(ddl.strip().rstrip(";"))  # CREATE OR REPLACE: la demo recrea la tabla
 
 # COMMAND ----------
 
-from pyspark.sql.types import StringType, StructField, StructType
-
 archivo = f"ded_tarifario_prestacion_{ESCENARIO}.csv"
 pdf = pd.read_csv(os.path.join(REPO_ROOT, "data", "sample", archivo), dtype=str, keep_default_na=False)
 pdf = pdf.astype(object).where(pdf != "", None)  # vacíos -> NULL
 
-df_raw = spark.createDataFrame(pdf, schema=StructType([StructField(c, StringType(), True) for c in pdf.columns]))
-
-# Tipos físicos tomados del contrato (TRY_CAST: un valor no convertible queda NULL y lo atrapa el gate)
-columnas = [
-    f"TRY_CAST(`{p['name']}` AS {p['physicalType']}) AS `{p['name']}`" for p in MODEL["properties"]
-]
-df = df_raw.selectExpr(*columnas)
+df_raw = spark.createDataFrame(pdf, schema=StructType([StructField(col, StringType(), True) for col in pdf.columns]))
+df = contratos.tipar_segun_contrato(df_raw, c)
 print(f"Archivo: {archivo} — {df.count()} filas")
 display(df)
 
@@ -126,14 +88,14 @@ display(df)
 
 # COMMAND ----------
 
-df.createOrReplaceTempView(TABLE)
-run_gate = DataContract(data_contract_str=CONTRACT_STR, server="gate", spark=spark).test()
-spark.catalog.dropTempView(TABLE)  # evita que la vista tape a la tabla física en el paso 5
+paso_gate, resumen_gate = contratos.validar_dataframe(spark, c, df)
+mostrar("Gate pre-publicación", paso_gate, resumen_gate)
 
-if not mostrar_resultado(run_gate, "Gate pre-publicación"):
-    raise Exception(
-        f"El archivo {archivo} no cumple el contrato {contract['id']}. "
-        "No se publica la tabla. Revisa los checks fallidos arriba."
+if not paso_gate:
+    filas_vigentes = spark.table(c["fqn"]).count()
+    raise contratos.ContratoError(
+        f"El archivo {archivo} no cumple el contrato {c['contrato']['id']}. No se publica: "
+        f"{c['fqn']} conserva sus {filas_vigentes} filas vigentes. Revisa los checks fallidos arriba."
     )
 
 # COMMAND ----------
@@ -142,8 +104,7 @@ if not mostrar_resultado(run_gate, "Gate pre-publicación"):
 
 # COMMAND ----------
 
-df.write.mode("overwrite").insertInto(FQN)
-print(f"Cargadas {spark.table(FQN).count()} filas en {FQN}")
+print(f"Cargadas {contratos.publicar(spark, c, df)} filas en {c['fqn']}")
 
 # COMMAND ----------
 
@@ -151,6 +112,7 @@ print(f"Cargadas {spark.table(FQN).count()} filas en {FQN}")
 
 # COMMAND ----------
 
-run_tabla = DataContract(data_contract_str=CONTRACT_STR, server="databricks_dev", spark=spark).test()
-if not mostrar_resultado(run_tabla, f"Tabla {FQN}"):
-    raise Exception(f"La tabla {FQN} no cumple el contrato {contract['id']}.")
+paso_tabla, resumen_tabla = contratos.validar(spark, c, AMBIENTE)
+mostrar(f"Tabla {c['fqn']}", paso_tabla, resumen_tabla)
+if not paso_tabla:
+    raise contratos.ContratoError(f"La tabla {c['fqn']} no cumple el contrato {c['contrato']['id']}.")
