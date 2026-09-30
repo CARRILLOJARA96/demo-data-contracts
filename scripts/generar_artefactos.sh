@@ -10,7 +10,7 @@ mkdir -p generated
 for contrato in contracts/*/*.odcs.yaml; do
   nombre=$(basename "$contrato" .odcs.yaml)
   echo "▶ ${contrato}"
-  datacontract export sql --dialect databricks --server databricks_dev \
+  datacontract export sql --dialect databricks --server desa \
     --output "generated/${nombre}.databricks.sql" "$contrato" > /dev/null
   datacontract export html --output "generated/${nombre}.html" "$contrato" > /dev/null
 done

@@ -30,7 +30,8 @@ La **fuente de verdad es el Excel** (`alcance/`). El YAML (`contracts/`) se gene
 | `contracts/landing_ded/ded_tarifario_prestacion.odcs.yaml` | Contrato ODCS generado desde el Excel. **No editar a mano.** |
 | `generated/` | DDL Databricks y documentación HTML generados desde el contrato. |
 | `data/sample/` | Datos de muestra: `_ok.csv` (cumple) y `_errores.csv` (8 violaciones sembradas). |
-| `databricks/demo_data_contract_ded.py` | Notebook: DDL → gate → carga → validación post-carga. |
+| `databricks/demo_data_contract_ded.py` | Notebook: estructura → gate → carga → validación post-carga. |
+| `databricks/contratos.py` | Módulo reutilizable: resolver la tabla del ambiente, DDL no destructivo, gate, carga. |
 | `scripts/` | Conversión Excel→YAML, generación de artefactos, chequeo de breaking changes, demo local. |
 | `.github/workflows/data-contracts.yml` | Pipeline de CI para cada PR. |
 
@@ -41,7 +42,9 @@ La **fuente de verdad es el Excel** (`alcance/`). El YAML (`contracts/`) se gene
 - **Reglas de calidad**: patrón `^CL[0-9]{3}$` en clínica, largo 6 en prestación, moneda ∈ {PEN, USD},
   tarifa > 0, fin de vigencia ≥ inicio, tabla no vacía.
 - **Propiedades propias del framework** (`customProperties`): `capa`, `flujo`, `subdominio`, `frecuenciaCarga`.
-- **Servidores**: `local` (CSV + DuckDB), `gate` (DataFrame de Spark) y `databricks_dev` (Unity Catalog).
+- **Servidores**: `local` (CSV + DuckDB), `gate` (DataFrame de Spark) y un servidor Databricks por ambiente:
+  `desa` → `desa_landing.prestaciones_tarifarios` y `prod` → `prod_landing.prestaciones_tarifarios`.
+  Convención: catálogo `<ambiente>_<capa>`, esquema `<dominio>_<subdominio>` (campo `domain` + customProperty `subdominio`); se valida al desplegar.
 
 ---
 
@@ -91,18 +94,24 @@ Para exigirlo, activa en *Settings → Branches* una regla sobre `main` que requ
 
 ## 3 · Ejecutarlo en Databricks
 
-1. **Clonar el repo** en el workspace: *Workspace → Create → Git folder* → URL de tu repo.
-2. **Cómputo**: serverless o un cluster con **Databricks Runtime 15.4 LTS o superior**, con acceso a PyPI.
-3. **Abrir** `databricks/demo_data_contract_ded` y ajustar los widgets:
-   - `catalog`: un catálogo de Unity Catalog donde puedas crear esquemas (por defecto `workspace`).
-   - `schema`: `landing_ded` (se crea si no existe).
+Probado en **Databricks Free Edition** (serverless).
+
+1. **Catálogos**: crea uno por ambiente y capa (convención `<ambiente>_<capa>`), p. ej. en el SQL Editor:
+   `CREATE CATALOG IF NOT EXISTS desa_landing;` (y `prod_landing` para producción). El esquema lo crea el notebook.
+2. **Clonar el repo** en el workspace: *Workspace → Create → Git folder* → URL HTTPS de tu repo.
+3. **Cómputo**: serverless (o un cluster con Databricks Runtime 15.4 LTS o superior), con acceso a PyPI.
+4. **Abrir** `databricks/demo_data_contract_ded`, elegir los widgets y **Run all**:
+   - `ambiente`: `desa` o `prod` (servidor del contrato → tabla `<ambiente>_landing.prestaciones_tarifarios.ded_tarifario_prestacion`).
    - `escenario`: `ok` o `errores`.
-4. **Run all**.
 
 | Escenario | Qué pasa |
 |---|---|
-| `ok` | Se crea la tabla desde el DDL del contrato, el gate pasa (39 checks), se cargan 8 filas y la validación post-carga pasa. |
-| `errores` | El gate falla con 8 checks en rojo y el notebook se detiene **antes de escribir**: la tabla no se publica. |
+| `ok` | Crea la tabla si no existe (o agrega columnas opcionales nuevas del contrato), el gate pasa (39 checks), carga 8 filas y la validación post-carga pasa. |
+| `errores` | El gate falla con 8 checks en rojo y el notebook se detiene **antes de escribir**: la tabla conserva sus datos vigentes. |
+
+La estructura de la tabla nunca se recrea. Si el contrato agrega una columna **opcional**, se aplica con
+`ALTER TABLE ADD COLUMNS`. Cualquier otra diferencia (columna eliminada, tipo distinto, columna nueva obligatoria)
+detiene el proceso: son cambios incompatibles que el CI ya bloquea en el PR.
 
 Para usarlo en un Job, basta con programar el notebook: si el contrato no se cumple, la tarea falla.
 
@@ -112,8 +121,8 @@ Para usarlo en un Job, basta con programar el notebook: si el contrato no se cum
 
 - **Unity Catalog es necesario** para la llave primaria del DDL (en UC es informativa, no bloquea duplicados;
   por eso el contrato también la valida como regla de calidad). En `hive_metastore` hay que quitar la línea `CONSTRAINT`.
-- El DDL usa `CREATE OR REPLACE TABLE`: la demo recrea la tabla en cada corrida. En un flujo real,
-  los cambios de estructura deberían pasar por migraciones controladas.
+- En serverless (entorno por defecto con pandas 1.5) el notebook instala también `pandas>=2.2,<3`: el motor de
+  validación del CLI (ibis 12) lo necesita. Sin eso, los checks de datos fallan con `OptionError: No such option`.
 - La conversión Excel↔YAML es **determinística y sin pérdidas** (verificado): el Excel puede ir y volver.
 - La plantilla usada es la **oficial de ODCS**, no el documento de alcance DED real de la empresa. El siguiente paso
   sería mapear ese documento a esta plantilla o escribir un conversor propio.

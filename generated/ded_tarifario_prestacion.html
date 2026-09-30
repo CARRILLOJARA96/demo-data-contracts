@@ -4150,7 +4150,7 @@ physicalType: STRING"
       
       
 
-      <li class="relative flex flex-col gap-x-6 gap-y-2 px-4 py-3 sm:px-6" id="server-databricks_dev">
+      <li class="relative flex flex-col gap-x-6 gap-y-2 px-4 py-3 sm:px-6" id="server-desa">
         <div class="flex items-start gap-x-4">
           
             <div class="flex-none h-12 w-12 rounded-lg bg-white p-2.5 ring-1 ring-gray-900/10 flex items-center justify-center self-start">
@@ -4172,7 +4172,7 @@ physicalType: STRING"
             <div class="flex flex-wrap items-start gap-x-6 gap-y-2">
               <div class="flex flex-col">
                 <div class="text-sm font-medium text-gray-500">Server</div>
-                <div class="mt-1 text-sm text-gray-900">databricks_dev</div>
+                <div class="mt-1 text-sm text-gray-900">desa</div>
               </div>
 
               
@@ -4197,7 +4197,7 @@ physicalType: STRING"
               
                 <div class="flex flex-col">
                   <div class="text-sm font-medium text-gray-500">Catalog</div>
-                  <div class="mt-1 text-sm text-gray-900">workspace</div>
+                  <div class="mt-1 text-sm text-gray-900">desa_landing</div>
                 </div>
               
 
@@ -4206,7 +4206,105 @@ physicalType: STRING"
               
                 <div class="flex flex-col">
                   <div class="text-sm font-medium text-gray-500">Schema</div>
-                  <div class="mt-1 text-sm text-gray-900">landing_ded</div>
+                  <div class="mt-1 text-sm text-gray-900">prestaciones_tarifarios</div>
+                </div>
+              
+
+              
+
+              
+
+              
+
+              
+
+              
+
+              
+
+              
+
+              
+
+              
+
+              
+
+              
+
+              
+
+              
+
+              
+
+              
+            </div>
+          </div>
+        </div>
+      </li>
+    
+      
+      
+      
+
+      <li class="relative flex flex-col gap-x-6 gap-y-2 px-4 py-3 sm:px-6" id="server-prod">
+        <div class="flex items-start gap-x-4">
+          
+            <div class="flex-none h-12 w-12 rounded-lg bg-white p-2.5 ring-1 ring-gray-900/10 flex items-center justify-center self-start">
+              
+
+  
+  
+  
+
+  
+    <svg viewBox="0 0 24 24" class="h-6 w-6 text-sky-700" fill="none" stroke="currentColor" stroke-width="1.8">
+      <path d="M7 18h10a4 4 0 0 0 .4-8 5.5 5.5 0 0 0-10.7 1.5A3.5 3.5 0 0 0 7 18z"></path>
+    </svg>
+  
+            </div>
+          
+
+          <div class="flex-1">
+            <div class="flex flex-wrap items-start gap-x-6 gap-y-2">
+              <div class="flex flex-col">
+                <div class="text-sm font-medium text-gray-500">Server</div>
+                <div class="mt-1 text-sm text-gray-900">prod</div>
+              </div>
+
+              
+                <div class="flex flex-col">
+                  <div class="text-sm font-medium text-gray-500">Type</div>
+                  <div class="mt-1 text-sm text-gray-900">databricks</div>
+                </div>
+              
+
+              
+
+              
+
+              
+
+              
+
+              
+
+              
+
+              
+                <div class="flex flex-col">
+                  <div class="text-sm font-medium text-gray-500">Catalog</div>
+                  <div class="mt-1 text-sm text-gray-900">prod_landing</div>
+                </div>
+              
+
+              
+
+              
+                <div class="flex flex-col">
+                  <div class="text-sm font-medium text-gray-500">Schema</div>
+                  <div class="mt-1 text-sm text-gray-900">prestaciones_tarifarios</div>
                 </div>
               
 
@@ -4647,7 +4745,7 @@ physicalType: STRING"
         </div>
       </div>
       <div class="mt-6 text-sm text-gray-400">
-        Created at 30 Sep 2026 18:03:27 UTC with <a href="https://cli.datacontract.com" class="text-gray-400 hover:text-gray-500">Data Contract CLI</a> v1.2.2
+        Created at 30 Sep 2026 20:50:46 UTC with <a href="https://cli.datacontract.com" class="text-gray-400 hover:text-gray-500">Data Contract CLI</a> v1.2.2
       </div>
     </div>
   </main>
@@ -4698,13 +4796,20 @@ servers:
   customProperties:
   - property: customType
     value: dataframe
-- id: databricks_dev
-  server: databricks_dev
+- id: desa
+  server: desa
   type: databricks
-  description: Ambiente de pruebas en Databricks (Unity Catalog).
-  environment: dev
-  catalog: workspace
-  schema: landing_ded
+  description: Ambiente de desarrollo en Databricks (Unity Catalog).
+  environment: desa
+  catalog: desa_landing
+  schema: prestaciones_tarifarios
+- id: prod
+  server: prod
+  type: databricks
+  description: Ambiente productivo en Databricks (Unity Catalog).
+  environment: prod
+  catalog: prod_landing
+  schema: prestaciones_tarifarios
 dataProduct: tarifario_prestaciones
 description:
   usage: Insumo para valorizar atenciones en trusted/enriched. Una fila es una tarifa
