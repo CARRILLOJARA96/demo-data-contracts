@@ -5,3 +5,7 @@ venv/
 .DS_Store
 spark-warehouse/
 metastore_db/
+
+# Notas locales para Claude Code (no se publican)
+CLAUDE.md
+CLAUDE.local.md
