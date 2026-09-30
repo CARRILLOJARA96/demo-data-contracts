@@ -1,0 +1,1 @@
+datacontract-cli[excel,duckdb,csv]==1.2.2

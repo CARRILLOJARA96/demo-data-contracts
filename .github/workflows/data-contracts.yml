@@ -1,0 +1,65 @@
+name: data-contracts
+
+on:
+  pull_request:
+    paths:
+      - "alcance/**"
+      - "contracts/**"
+      - "data/sample/**"
+      - "scripts/**"
+      - ".github/workflows/data-contracts.yml"
+  push:
+    branches: [main]
+    paths:
+      - "alcance/**"
+      - "contracts/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contratos:
+    name: Validar contratos de datos
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # necesario para comparar contra la rama base
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Instalar Data Contract CLI
+        run: pip install "datacontract-cli[excel,duckdb,csv]==1.2.2"
+
+      - name: 1 · Excel de alcance y YAML sincronizados
+        run: |
+          chmod +x scripts/*.sh
+          scripts/excel_a_contrato.sh
+          if ! git diff --exit-code -- contracts/; then
+            echo "::error::El YAML no coincide con el Excel de alcance. Ejecuta scripts/excel_a_contrato.sh y sube el resultado."
+            exit 1
+          fi
+
+      - name: 2 · Lint contra ODCS
+        run: for c in contracts/*/*.odcs.yaml; do datacontract lint "$c"; done
+
+      - name: 3 · Cambios incompatibles vs rama base
+        if: github.event_name == 'pull_request'
+        run: scripts/ci_breaking.sh "origin/${{ github.base_ref }}"
+
+      - name: 4 · Test de humo con datos de muestra
+        run: |
+          for c in contracts/*/*.odcs.yaml; do
+            datacontract ci --server local "$c"
+          done
+
+      - name: 5 · Generar DDL y documentación
+        run: scripts/generar_artefactos.sh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: artefactos-contratos
+          path: generated/

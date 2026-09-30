@@ -1,0 +1,7 @@
+__pycache__/
+.venv/
+venv/
+~$*.xlsx
+.DS_Store
+spark-warehouse/
+metastore_db/

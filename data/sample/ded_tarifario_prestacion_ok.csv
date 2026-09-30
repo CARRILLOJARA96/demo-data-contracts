@@ -1,0 +1,9 @@
+cod_clinica,nom_clinica,cod_prestacion,des_prestacion,cod_moneda,mto_tarifa,fec_inicio_vigencia,fec_fin_vigencia,flg_activo,usr_registro
+CL001,Clínica Demo San Isidro,500101,Consulta ambulatoria medicina general,PEN,85.50,2026-01-01,,true,usr_demo01
+CL001,Clínica Demo San Isidro,500102,Consulta ambulatoria pediatría,PEN,95.00,2026-01-01,,true,usr_demo01
+CL001,Clínica Demo San Isidro,700201,Hemograma completo,PEN,32.00,2026-01-01,2026-06-30,false,usr_demo01
+CL001,Clínica Demo San Isidro,700201,Hemograma completo,PEN,34.50,2026-07-01,,true,usr_demo02
+CL002,Clínica Demo Miraflores,500101,Consulta ambulatoria medicina general,PEN,90.00,2026-02-01,,true,usr_demo02
+CL002,Clínica Demo Miraflores,800301,Resonancia magnética simple,USD,210.00,2026-02-01,,true,usr_demo02
+CL003,Clínica Demo Surco,500101,Consulta ambulatoria medicina general,PEN,80.00,2026-03-01,,true,usr_demo03
+CL003,Clínica Demo Surco,600110,Radiografía de tórax,PEN,65.00,2026-03-01,,true,usr_demo03

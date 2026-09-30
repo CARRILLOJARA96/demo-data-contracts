@@ -1,0 +1,236 @@
+version: 1.0.0
+kind: DataContract
+apiVersion: v3.2.0
+id: landing_ded_tarifario_prestacion
+name: Tarifario de prestaciones por clínica (DED)
+tenant: empresa-seguros-demo
+tags:
+- landing
+- ded
+- demo
+status: draft
+servers:
+- id: local
+  server: local
+  type: local
+  description: Archivo CSV local para probar el contrato sin Databricks.
+  environment: dev
+  delimiter: ','
+  format: csv
+  path: ./data/sample/ded_tarifario_prestacion.csv
+- id: gate
+  server: gate
+  type: custom
+  description: Quality gate previo a la publicación. Valida un DataFrame de Spark
+    (vista temporal con el nombre del modelo) antes de escribir la tabla.
+  environment: dev
+  customProperties:
+  - property: customType
+    value: dataframe
+- id: databricks_dev
+  server: databricks_dev
+  type: databricks
+  description: Ambiente de pruebas en Databricks (Unity Catalog).
+  environment: dev
+  catalog: workspace
+  schema: landing_ded
+dataProduct: tarifario_prestaciones
+description:
+  usage: Insumo para valorizar atenciones en trusted/enriched. Una fila es una tarifa
+    vigente de una prestación en una clínica desde una fecha de inicio.
+  purpose: Tarifario negociado de prestaciones por clínica, ingresado manualmente
+    por el área usuaria vía Data Entry (DED) en la capa landing del lakehouse.
+  limitations: DATOS SINTÉTICOS de demostración. No contiene datos de pacientes.
+  customProperties:
+  - property: documentoAlcance
+    value: alcance/landing_ded/ded_tarifario_prestacion.xlsx
+domain: prestaciones
+schema:
+- id: ded_tarifario_prestacion
+  name: ded_tarifario_prestacion
+  physicalType: table
+  description: Tarifas por clínica y prestación con su periodo de vigencia.
+  businessName: Tarifario de prestaciones por clínica
+  tags:
+  - ded
+  physicalName: ded_tarifario_prestacion
+  dataGranularityDescription: Una fila por clínica + prestación + fecha de inicio
+    de vigencia
+  properties:
+  - id: cod_clinica
+    name: cod_clinica
+    physicalType: STRING
+    description: Código interno de la clínica (formato CL + 3 dígitos).
+    businessName: Código de clínica
+    primaryKey: true
+    primaryKeyPosition: 1
+    logicalType: string
+    logicalTypeOptions:
+      pattern: ^CL[0-9]{3}$
+    required: true
+    classification: internal
+    examples:
+    - CL001
+  - id: nom_clinica
+    name: nom_clinica
+    physicalType: STRING
+    description: Nombre comercial de la clínica.
+    businessName: Nombre de clínica
+    logicalType: string
+    required: true
+    classification: internal
+    examples:
+    - Clínica Demo San Isidro
+  - id: cod_prestacion
+    name: cod_prestacion
+    physicalType: STRING
+    description: Código de la prestación médica según catálogo interno.
+    businessName: Código de prestación
+    primaryKey: true
+    primaryKeyPosition: 2
+    logicalType: string
+    logicalTypeOptions:
+      minLength: 6
+      maxLength: 6
+    required: true
+    classification: internal
+    examples:
+    - '500101'
+  - id: des_prestacion
+    name: des_prestacion
+    physicalType: STRING
+    description: Descripción de la prestación.
+    businessName: Descripción de prestación
+    logicalType: string
+    required: true
+    classification: internal
+    examples:
+    - Consulta ambulatoria medicina general
+  - id: cod_moneda
+    name: cod_moneda
+    physicalType: STRING
+    description: Moneda de la tarifa (ISO 4217).
+    businessName: Moneda
+    logicalType: string
+    required: true
+    classification: internal
+    examples:
+    - PEN
+    quality:
+    - description: Solo se aceptan PEN o USD.
+      dimension: conformity
+      name: moneda_valida
+      severity: error
+      type: library
+      metric: invalidValues
+      arguments:
+        validValues:
+        - PEN
+        - USD
+      mustBe: 0
+  - id: mto_tarifa
+    name: mto_tarifa
+    physicalType: DECIMAL(12,2)
+    description: Monto negociado de la tarifa, sin IGV.
+    businessName: Monto de tarifa
+    logicalType: number
+    logicalTypeOptions:
+      exclusiveMinimum: 0
+    required: true
+    classification: confidential
+    examples:
+    - 85.5
+    quality:
+    - description: La tarifa debe ser mayor a cero.
+      dimension: accuracy
+      name: tarifa_positiva
+      severity: error
+      type: sql
+      mustBe: 0
+      query: SELECT COUNT(*) FROM ded_tarifario_prestacion WHERE mto_tarifa <= 0
+  - id: fec_inicio_vigencia
+    name: fec_inicio_vigencia
+    physicalType: DATE
+    description: Fecha desde la que rige la tarifa.
+    businessName: Inicio de vigencia
+    primaryKey: true
+    primaryKeyPosition: 3
+    logicalType: date
+    logicalTypeOptions:
+      format: yyyy-MM-dd
+    required: true
+    classification: internal
+    examples:
+    - '2026-01-01'
+  - id: fec_fin_vigencia
+    name: fec_fin_vigencia
+    physicalType: DATE
+    description: Fecha hasta la que rige la tarifa. Vacío = vigente.
+    businessName: Fin de vigencia
+    logicalType: date
+    logicalTypeOptions:
+      format: yyyy-MM-dd
+    required: false
+    classification: internal
+  - id: flg_activo
+    name: flg_activo
+    physicalType: BOOLEAN
+    description: Indica si la tarifa está activa.
+    businessName: Indicador activo
+    logicalType: boolean
+    required: true
+    classification: internal
+  - id: usr_registro
+    name: usr_registro
+    physicalType: STRING
+    description: Usuario del área que ingresó el registro en el DED.
+    businessName: Usuario que registra
+    logicalType: string
+    required: true
+    classification: internal
+  quality:
+  - description: La carga del DED no puede venir vacía.
+    dimension: completeness
+    name: tabla_no_vacia
+    severity: error
+    type: library
+    metric: rowCount
+    mustBeGreaterThan: 0
+  - description: El fin de vigencia no puede ser anterior al inicio.
+    dimension: consistency
+    name: vigencia_coherente
+    severity: error
+    type: sql
+    mustBe: 0
+    query: SELECT COUNT(*) FROM ded_tarifario_prestacion WHERE fec_fin_vigencia IS
+      NOT NULL AND fec_fin_vigencia < fec_inicio_vigencia
+support:
+- channel: plataforma-datos
+  url: https://example.com/soporte-plataforma-datos
+  description: Canal de soporte del squad Plataforma de Datos (placeholder).
+team:
+  name: Plataforma de Datos (demo)
+  members:
+  - username: gobierno.datos
+    description: Gobierno de datos — levanta el documento de alcance con negocio.
+    role: owner
+  - username: modelamiento
+    description: Nombra tabla y campos, asigna tipos y genera DDL.
+    role: data-modeler
+  - username: ingenieria
+    description: Crea el flujo de creación de tabla y carga.
+    role: data-engineer
+slaProperties:
+- property: frequency
+  value: 1
+  unit: month
+  description: El área usuaria actualiza el tarifario mensualmente.
+customProperties:
+- property: capa
+  value: landing
+- property: flujo
+  value: DED
+- property: subdominio
+  value: tarifarios
+- property: frecuenciaCarga
+  value: mensual

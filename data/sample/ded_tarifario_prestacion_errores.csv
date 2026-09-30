@@ -1,0 +1,6 @@
+cod_clinica,nom_clinica,cod_prestacion,des_prestacion,cod_moneda,mto_tarifa,fec_inicio_vigencia,fec_fin_vigencia,flg_activo,usr_registro
+CL001,Clínica Demo San Isidro,500101,Consulta ambulatoria medicina general,PEN,85.50,2026-01-01,,true,usr_demo01
+CL001,Clínica Demo San Isidro,500101,Consulta ambulatoria medicina general,PEN,86.00,2026-01-01,,true,usr_demo01
+C-02,Clínica Demo Miraflores,500101,Consulta ambulatoria medicina general,EUR,90.00,2026-02-01,,true,usr_demo02
+CL003,Clínica Demo Surco,600110,Radiografía de tórax,PEN,0,2026-03-01,2026-01-31,true,usr_demo03
+CL003,Clínica Demo Surco,6001,Radiografía de tórax,PEN,65.00,2026-03-01,,true,
