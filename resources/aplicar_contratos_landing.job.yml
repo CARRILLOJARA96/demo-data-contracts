@@ -1,0 +1,30 @@
+# Job de la capa landing: una tarea por contrato, todas con el notebook genérico.
+# Sin cluster definido → las tareas corren en serverless.
+# Para agregar un contrato: copiar una tarea y cambiar task_key, contrato y archivo.
+
+resources:
+  jobs:
+    aplicar_contratos_landing:
+      name: aplicar_contratos_landing
+      description: Aplica los data contracts de la capa landing (estructura, gate, carga y validación).
+      max_concurrent_runs: 1
+      tags:
+        capa: landing
+        ambiente: ${var.ambiente}
+
+      tasks:
+        - task_key: de_maestro_canal
+          notebook_task:
+            notebook_path: ../databricks/aplicar_contrato.py
+            base_parameters:
+              contrato: contracts/landing_ded/de_maestro_canal.odcs.yaml
+              ambiente: ${var.ambiente}
+              archivo: data/sample/de_maestro_canal_ok.csv
+
+        - task_key: ded_tarifario_prestacion
+          notebook_task:
+            notebook_path: ../databricks/aplicar_contrato.py
+            base_parameters:
+              contrato: contracts/landing_ded/ded_tarifario_prestacion.odcs.yaml
+              ambiente: ${var.ambiente}
+              archivo: data/sample/ded_tarifario_prestacion_ok.csv

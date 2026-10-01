@@ -73,10 +73,14 @@ def asegurar_tabla(spark, c):
     spark.sql(f"CREATE SCHEMA IF NOT EXISTS {c['catalogo']}.{c['esquema']}")
 
     if not spark.catalog.tableExists(c["fqn"]):
+        # El exportador SQL del CLI (1.2.2) ignora el server del DataContract y solo lo lee de los argumentos
+        # extra del export: sin `server=` usaría el primer servidor databricks del contrato (desa).
         ddl = DataContract(data_contract_str=c["texto"], server=c["ambiente"]).export(
-            "sql", sql_server_type="databricks"
+            "sql", sql_server_type="databricks", server=c["ambiente"]
         )
         ddl = re.sub(r"CREATE\s+OR\s+REPLACE\s+TABLE", "CREATE TABLE IF NOT EXISTS", ddl.strip().rstrip(";"), count=1)
+        if f"CREATE TABLE IF NOT EXISTS {c['fqn']} " not in ddl:
+            raise ContratoError(f"El DDL generado no apunta a {c['fqn']}:\n{ddl[:300]}")
         spark.sql(ddl)
         return [f"tabla creada: {c['fqn']}"]
 
