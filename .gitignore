@@ -9,3 +9,7 @@ metastore_db/
 # Notas locales para Claude Code (no se publican)
 CLAUDE.md
 CLAUDE.local.md
+
+# Documentos reales de la empresa: NUNCA al repo
+doc-privado/
+privado/

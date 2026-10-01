@@ -1,0 +1,9 @@
+cod_intermediario,cod_canal_venta,des_canal_venta,nom_canal_distribucion,nom_grupo_canal,nom_grupo_venta,cod_grupo_venta,nbrusuariode,tipingresode,fecrutina,fecactualizacionregistro,fecdia
+INT0001,C01,Venta directa,Directo,Masivos,Grupo Norte,GV01,usr_demo01,M,2026-09-30,2026-09-30 08:00:00,2026-09-29
+INT0002,C01,Venta directa,Directo,Masivos,Grupo Norte,GV01,usr_demo01,M,2026-09-30,2026-09-30 08:00:00,2026-09-29
+INT0003,C02,Bancaseguros,Indirecto,Masivos,Grupo Sur,GV02,usr_demo01,M,2026-09-30,2026-09-30 08:00:00,2026-09-29
+INT0004,C02,Bancaseguros,Indirecto,Masivos,Grupo Sur,GV02,usr_demo01,M,2026-09-30,2026-09-30 08:00:00,2026-09-29
+INT0005,C03,Corredores,Indirecto,Corporativos,Grupo Centro,GV03,usr_demo01,M,2026-09-30,2026-09-30 08:00:00,2026-09-29
+INT0006,C03,Corredores,Indirecto,Corporativos,Grupo Centro,GV03,usr_demo01,M,2026-09-30,2026-09-30 08:00:00,2026-09-29
+INT0007,C04,Telemarketing,Directo,Masivos,Grupo Norte,GV01,usr_demo01,M,2026-09-30,2026-09-30 08:00:00,2026-09-29
+INT0008,C05,Venta digital,Directo,Masivos,Grupo Digital,GV04,usr_demo01,M,2026-09-30,2026-09-30 08:00:00,2026-09-29

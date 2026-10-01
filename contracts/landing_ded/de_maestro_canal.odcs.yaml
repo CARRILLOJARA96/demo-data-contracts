@@ -1,0 +1,477 @@
+# GENERADO desde alcance/landing_ded/de_maestro_canal.xlsx con scripts/ded_a_contrato.py — NO EDITAR A MANO.
+# Para cambiarlo, modifica el DED (o su complemento .contrato.yaml) y regenera.
+apiVersion: v3.2.0
+kind: DataContract
+id: landing_dataentry_int_de_maestro_canal
+name: MAESTRO_CANAL
+version: '1.0.0'
+status: draft
+tenant: empresa-seguros-demo
+dataProduct: maestro_canales
+domain: Canales de Venta
+tags:
+- landing
+- ded
+description:
+  purpose: Maestro de canales de venta e intermediarios, mantenido por el área comercial vía data entry.
+  usage: Data entry transitorio (ingesta interna) en la capa landing.
+customProperties:
+- property: capa
+  value: LANDING
+- property: flujo
+  value: DED
+- property: empresa
+  value: demo
+- property: schemaLanding
+  value: dataentry_int
+- property: tipoDataEntry
+  value: transitorio (ingesta interna)
+- property: nombreTablaFuente
+  value: MAESTRO_CANAL
+- property: tipoFuente
+  value: MAESTRA
+- property: tipoCarga
+  value: Full
+- property: frecuenciaActualizacion
+  value: A DEMANDA
+- property: registrosCargaInicial
+  value: '120'
+- property: rutaBroad
+  value: broad/demo/dataentry/int/canales_de_venta/de_maestro_canal/data/
+- property: contenedorBroad
+  value: broad
+- property: rutaLanding
+  value: landing/demo/dataentry/int/canales_de_venta/de_maestro_canal/data/in/first_load/
+- property: dac
+  value: 'NO'
+- property: productOwner
+  value: PO DEMO 2
+- property: squad
+  value: PLATAFORMA DE DATOS
+- property: camposDescartados
+  value: NOM_INTERMEDIARIO
+- property: documentoAlcance
+  value: alcance/landing_ded/de_maestro_canal.xlsx
+- property: versionPlantillaDED
+  value: '3'
+servers:
+- id: local
+  server: local
+  type: local
+  environment: dev
+  description: CSV local para probar el contrato sin Databricks.
+  format: csv
+  delimiter: ','
+  path: ./data/sample/de_maestro_canal.csv
+- id: gate
+  server: gate
+  type: custom
+  environment: dev
+  description: Quality gate previo a la publicación (DataFrame de Spark como vista temporal).
+  customProperties:
+  - property: customType
+    value: dataframe
+- id: desa
+  server: desa
+  type: databricks
+  environment: desa
+  description: Ambiente de desarrollo en Databricks (Unity Catalog).
+  catalog: desa_landing
+  schema: dataentry_int
+- id: prod
+  server: prod
+  type: databricks
+  environment: prod
+  description: Ambiente productivo en Databricks (Unity Catalog).
+  catalog: prod_landing
+  schema: dataentry_int
+schema:
+- id: de_maestro_canal
+  name: de_maestro_canal
+  physicalName: de_maestro_canal
+  physicalType: table
+  businessName: MAESTRO_CANAL
+  description: Maestro de canales de venta e intermediarios, mantenido por el área comercial vía data entry.
+  tags:
+  - dataentry
+  properties:
+  - id: cod_intermediario
+    name: cod_intermediario
+    businessName: COD_INTERMEDIARIO
+    logicalType: string
+    physicalType: STRING
+    description: Código del intermediario (corredor o agente) que comercializa los productos.
+    required: true
+    classification: public
+    primaryKey: true
+    primaryKeyPosition: 1
+    examples:
+    - INT0001
+    - INT0002
+    customProperties:
+    - property: fuente
+      value: Sistema core (demo)
+    - property: dac
+      value: 'NO'
+    - property: contieneVacios
+      value: 'NO'
+    - property: criticidad
+      value: EDNC
+    - property: sustentoCriticidad
+      value: Dato maestro de referencia comercial (demo).
+    - property: tipoFormatoGobierno
+      value: Texto_Alfanumérico
+    - property: formatoInput
+      value: Varchar
+    - property: aplicaTrazabilidad
+      value: 'NO'
+    - property: llaveTecnica
+      value: 'NO'
+  - id: cod_canal_venta
+    name: cod_canal_venta
+    businessName: COD_CANAL_VENTA
+    logicalType: string
+    physicalType: STRING
+    description: Código del canal de venta.
+    required: true
+    classification: public
+    examples:
+    - C01
+    - C02
+    customProperties:
+    - property: fuente
+      value: Fuente externa (demo)
+    - property: dac
+      value: 'NO'
+    - property: contieneVacios
+      value: 'NO'
+    - property: criticidad
+      value: EDNC
+    - property: sustentoCriticidad
+      value: Dato maestro de referencia comercial (demo).
+    - property: tipoFormatoGobierno
+      value: Texto_Alfanumérico
+    - property: formatoInput
+      value: Varchar
+    - property: aplicaTrazabilidad
+      value: 'NO'
+    - property: llaveTecnica
+      value: 'NO'
+  - id: des_canal_venta
+    name: des_canal_venta
+    businessName: DES_CANAL_VENTA
+    logicalType: string
+    physicalType: STRING
+    description: Descripción del canal de venta.
+    required: true
+    classification: public
+    examples:
+    - Venta directa
+    - Bancaseguros
+    customProperties:
+    - property: fuente
+      value: Fuente externa (demo)
+    - property: dac
+      value: 'NO'
+    - property: contieneVacios
+      value: 'NO'
+    - property: criticidad
+      value: EDNC
+    - property: sustentoCriticidad
+      value: Dato maestro de referencia comercial (demo).
+    - property: tipoFormatoGobierno
+      value: Texto_Alfanumérico
+    - property: formatoInput
+      value: Varchar
+    - property: aplicaTrazabilidad
+      value: 'NO'
+    - property: llaveTecnica
+      value: 'NO'
+  - id: nom_canal_distribucion
+    name: nom_canal_distribucion
+    businessName: NOM_CANAL_DISTRIBUCION
+    logicalType: string
+    physicalType: STRING
+    description: Canal de distribución al que pertenece el canal de venta.
+    required: true
+    classification: public
+    examples:
+    - Directo
+    - Indirecto
+    customProperties:
+    - property: fuente
+      value: Fuente externa (demo)
+    - property: dac
+      value: 'NO'
+    - property: contieneVacios
+      value: 'NO'
+    - property: criticidad
+      value: EDNC
+    - property: sustentoCriticidad
+      value: Dato maestro de referencia comercial (demo).
+    - property: tipoFormatoGobierno
+      value: Texto_Alfanumérico
+    - property: formatoInput
+      value: Varchar
+    - property: aplicaTrazabilidad
+      value: 'NO'
+    - property: llaveTecnica
+      value: 'NO'
+  - id: nom_grupo_canal
+    name: nom_grupo_canal
+    businessName: NOM_GRUPO_CANAL
+    logicalType: string
+    physicalType: STRING
+    description: Agrupación de canales usada en los reportes comerciales.
+    required: true
+    classification: public
+    examples:
+    - Masivos
+    - Corporativos
+    customProperties:
+    - property: fuente
+      value: Fuente externa (demo)
+    - property: dac
+      value: 'NO'
+    - property: contieneVacios
+      value: 'NO'
+    - property: criticidad
+      value: EDNC
+    - property: sustentoCriticidad
+      value: Dato maestro de referencia comercial (demo).
+    - property: tipoFormatoGobierno
+      value: Texto_Alfanumérico
+    - property: formatoInput
+      value: Varchar
+    - property: aplicaTrazabilidad
+      value: 'NO'
+    - property: llaveTecnica
+      value: 'NO'
+  - id: nom_grupo_venta
+    name: nom_grupo_venta
+    businessName: NOM_GRUPO_VENTA
+    logicalType: string
+    physicalType: STRING
+    description: Grupo comercial responsable del canal.
+    required: true
+    classification: public
+    examples:
+    - Grupo Norte
+    - Grupo Sur
+    customProperties:
+    - property: fuente
+      value: Fuente externa (demo)
+    - property: dac
+      value: 'NO'
+    - property: contieneVacios
+      value: 'NO'
+    - property: criticidad
+      value: EDNC
+    - property: sustentoCriticidad
+      value: Dato maestro de referencia comercial (demo).
+    - property: tipoFormatoGobierno
+      value: Texto_Alfanumérico
+    - property: formatoInput
+      value: Varchar
+    - property: aplicaTrazabilidad
+      value: 'NO'
+    - property: llaveTecnica
+      value: 'NO'
+  - id: cod_grupo_venta
+    name: cod_grupo_venta
+    businessName: COD_GRUPO_VENTA
+    logicalType: string
+    physicalType: STRING
+    description: Código del grupo comercial.
+    required: true
+    classification: public
+    examples:
+    - GV01
+    - GV02
+    customProperties:
+    - property: fuente
+      value: Fuente externa (demo)
+    - property: dac
+      value: 'NO'
+    - property: contieneVacios
+      value: 'NO'
+    - property: criticidad
+      value: EDNC
+    - property: sustentoCriticidad
+      value: Dato maestro de referencia comercial (demo).
+    - property: tipoFormatoGobierno
+      value: Texto_Alfanumérico
+    - property: formatoInput
+      value: Varchar
+    - property: aplicaTrazabilidad
+      value: 'NO'
+    - property: llaveTecnica
+      value: 'NO'
+  - id: nbrusuariode
+    name: nbrusuariode
+    businessName: nbrusuariode
+    logicalType: string
+    physicalType: STRING
+    description: Nombre del usuario que realizó la carga del archivo
+    required: true
+    classification: internal
+    customProperties:
+    - property: fuente
+      value: (Campo técnico)
+    - property: campoTecnico
+      value: true
+    - property: dac
+      value: 'NO'
+    - property: contieneVacios
+      value: 'NO'
+    - property: criticidad
+      value: EDNC
+    - property: tipoFormatoGobierno
+      value: Texto_Alfanumérico
+    - property: formatoInput
+      value: Varchar
+    - property: aplicaTrazabilidad
+      value: 'NO'
+    - property: llaveTecnica
+      value: 'NO'
+  - id: tipingresode
+    name: tipingresode
+    businessName: tipingresode
+    logicalType: string
+    physicalType: STRING
+    description: 'Tipo de ingreso del registro: Masivo (M) o Individual (I), según el origen del proceso.'
+    required: true
+    classification: internal
+    quality:
+    - type: library
+      metric: invalidValues
+      arguments:
+        validValues:
+        - M
+        - I
+      mustBe: 0
+      name: tipingresode_catalogo
+      description: Valores permitidos según el catálogo del DED.
+      dimension: conformity
+      severity: error
+    customProperties:
+    - property: fuente
+      value: (Campo técnico)
+    - property: campoTecnico
+      value: true
+    - property: dac
+      value: 'NO'
+    - property: contieneVacios
+      value: 'NO'
+    - property: criticidad
+      value: EDNC
+    - property: tipoFormatoGobierno
+      value: Texto_Alfanumérico
+    - property: formatoInput
+      value: Varchar
+    - property: aplicaTrazabilidad
+      value: 'NO'
+    - property: llaveTecnica
+      value: 'NO'
+  - id: fecrutina
+    name: fecrutina
+    businessName: fecrutina
+    logicalType: date
+    physicalType: DATE
+    description: Fecha en que se ejecutó el proceso de carga hacia la capa Landing.
+    required: true
+    classification: internal
+    customProperties:
+    - property: fuente
+      value: (Campo técnico)
+    - property: campoTecnico
+      value: true
+    - property: dac
+      value: 'NO'
+    - property: contieneVacios
+      value: 'NO'
+    - property: criticidad
+      value: EDNC
+    - property: tipoFormatoGobierno
+      value: Texto_Alfanumérico
+    - property: formatoInput
+      value: Varchar
+    - property: aplicaTrazabilidad
+      value: 'NO'
+    - property: llaveTecnica
+      value: 'NO'
+  - id: fecactualizacionregistro
+    name: fecactualizacionregistro
+    businessName: fecactualizacionregistro
+    logicalType: timestamp
+    physicalType: TIMESTAMP
+    description: Fecha y hora en que se insertó o actualizó el registro en el data entry.
+    required: true
+    classification: internal
+    customProperties:
+    - property: fuente
+      value: (Campo técnico)
+    - property: campoTecnico
+      value: true
+    - property: dac
+      value: 'NO'
+    - property: contieneVacios
+      value: 'NO'
+    - property: criticidad
+      value: EDNC
+    - property: tipoFormatoGobierno
+      value: Texto_Alfanumérico
+    - property: formatoInput
+      value: Varchar
+    - property: aplicaTrazabilidad
+      value: 'NO'
+    - property: llaveTecnica
+      value: 'NO'
+  - id: fecdia
+    name: fecdia
+    businessName: fecdia
+    logicalType: date
+    physicalType: DATE
+    description: Fecha de generación del registro en la fuente de usuario.
+    required: true
+    classification: internal
+    customProperties:
+    - property: fuente
+      value: (Campo técnico)
+    - property: campoTecnico
+      value: true
+    - property: dac
+      value: 'NO'
+    - property: contieneVacios
+      value: 'NO'
+    - property: criticidad
+      value: EDNC
+    - property: tipoFormatoGobierno
+      value: Texto_Alfanumérico
+    - property: formatoInput
+      value: Varchar
+    - property: aplicaTrazabilidad
+      value: 'NO'
+    - property: llaveTecnica
+      value: 'NO'
+  quality:
+  - type: library
+    metric: rowCount
+    mustBeGreaterThan: 0
+    name: tabla_no_vacia
+    description: La carga del data entry no puede venir vacía.
+    dimension: completeness
+    severity: error
+  - type: sql
+    query: SELECT COUNT(*) FROM (SELECT cod_canal_venta FROM de_maestro_canal GROUP BY cod_canal_venta HAVING COUNT(DISTINCT
+      des_canal_venta) > 1)
+    mustBe: 0
+    name: canal_descripcion_unica
+    description: Cada código de canal de venta tiene una sola descripción.
+    dimension: consistency
+    severity: error
+team:
+  name: PLATAFORMA DE DATOS
+  members:
+  - username: PO DEMO 2
+    role: product-owner
