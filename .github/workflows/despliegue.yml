@@ -1,0 +1,65 @@
+name: despliegue
+
+# Despliega el bundle y aplica los contratos en Databricks tras cada merge a main:
+#   desa → automático
+#   prod → espera la aprobación configurada en el GitHub Environment "prod"
+#
+# Credenciales: secrets DATABRICKS_HOST y DATABRICKS_TOKEN de cada GitHub Environment (desa, prod).
+# Nunca en el repo.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "alcance/**"
+      - "contracts/**"
+      - "data/sample/**"
+      - "databricks/**"
+      - "resources/**"
+      - "databricks.yml"
+      - ".github/workflows/despliegue.yml"
+  workflow_dispatch:
+
+# Un despliegue a la vez; si llega otro merge, espera a que termine el actual
+concurrency:
+  group: despliegue
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  desa:
+    name: Desplegar en desa
+    runs-on: ubuntu-latest
+    environment: desa
+    env:
+      DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+      DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: databricks/setup-cli@v1.18.0
+      - name: Validar bundle
+        run: databricks bundle validate -t desa
+      - name: Desplegar
+        run: databricks bundle deploy -t desa
+      - name: Aplicar contratos (estructura, gate, carga y validación)
+        run: databricks bundle run -t desa aplicar_contratos_landing
+
+  prod:
+    name: Desplegar en prod
+    needs: desa
+    runs-on: ubuntu-latest
+    environment: prod
+    env:
+      DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+      DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: databricks/setup-cli@v1.18.0
+      - name: Validar bundle
+        run: databricks bundle validate -t prod
+      - name: Desplegar
+        run: databricks bundle deploy -t prod
+      - name: Aplicar contratos (estructura, gate, carga y validación)
+        run: databricks bundle run -t prod aplicar_contratos_landing

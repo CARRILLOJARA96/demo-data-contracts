@@ -46,6 +46,7 @@ DDL, la documentación, los controles de CI y la validación de datos en Databri
 | `databricks/demo_data_contract_ded.py` | Notebook de ejemplo fijo para tarifario (widgets `ambiente` y `escenario`). |
 | `databricks.yml`, `resources/` | **Databricks Asset Bundle**: targets `desa`/`prod` y el job que aplica los contratos. |
 | `.github/workflows/data-contracts.yml` | Pipeline de CI para cada PR. |
+| `.github/workflows/despliegue.yml` | Despliegue tras el merge: `desa` automático, `prod` con aprobación. |
 
 ## Qué toma el conversor del DED
 
@@ -192,6 +193,25 @@ databricks bundle run      -t desa --profile <perfil> aplicar_contratos_landing
 
 Para agregar un contrato al job: copiar una tarea en el `.job.yml` y cambiar `task_key`, `contrato` y `archivo`.
 El bundle sube el repo menos lo ignorado por git; además excluye explícitamente `doc-privado/` y `privado/`.
+
+### Despliegue automático (GitHub Actions)
+
+`.github/workflows/despliegue.yml` corre en cada merge a `main` que toque contratos, documentos de alcance,
+datos de muestra, notebooks o el bundle (y a mano desde *Actions → despliegue → Run workflow*):
+
+```
+merge a main ──▶ desa: validate → deploy → run ──▶ ⏸ aprobación ──▶ prod: validate → deploy → run
+                 (si un contrato falla, se detiene aquí y prod no se toca)
+```
+
+Configuración única en GitHub (*Settings → Environments*):
+
+| Environment | Secrets | Regla |
+|---|---|---|
+| `desa` | `DATABRICKS_HOST`, `DATABRICKS_TOKEN` | — |
+| `prod` | `DATABRICKS_HOST`, `DATABRICKS_TOKEN` | *Required reviewers*: quien aprueba el paso a producción |
+
+En un entorno real, `DATABRICKS_TOKEN` sería de un *service principal* por ambiente, no de una persona.
 
 ---
 
