@@ -42,7 +42,8 @@ DDL, la documentación, los controles de CI y la validación de datos en Databri
 | `scripts/ded_a_contrato.py` | **Conversor DED → ODCS** con validación estricta. |
 | `scripts/` (resto) | Conversión de todos los documentos, artefactos, breaking changes, demo local. |
 | `databricks/contratos.py` | Módulo reutilizable: resolver la tabla del ambiente, DDL no destructivo, gate, carga. |
-| `databricks/demo_data_contract_ded.py` | Notebook de ejemplo (tarifario): estructura → gate → carga → validación post-carga. |
+| `databricks/aplicar_contrato.py` | **Notebook genérico**: aplica cualquier contrato (estructura → gate → carga → validación post-carga). |
+| `databricks/demo_data_contract_ded.py` | Notebook de ejemplo fijo para tarifario (widgets `ambiente` y `escenario`). |
 | `.github/workflows/data-contracts.yml` | Pipeline de CI para cada PR. |
 
 ## Qué toma el conversor del DED
@@ -145,20 +146,24 @@ Para exigirlo, activa en *Settings → Rules* una regla sobre `main` que requier
 
 ## 3 · Ejecutarlo en Databricks
 
-Probado en **Databricks Free Edition** (serverless) con el notebook de tarifario.
+Probado en **Databricks Free Edition** (serverless).
 
 1. **Catálogos**: crea uno por ambiente y capa, p. ej. en el SQL Editor:
    `CREATE CATALOG IF NOT EXISTS desa_landing;` (y `prod_landing` para producción). El esquema lo crea el notebook.
 2. **Clonar el repo** en el workspace: *Workspace → Create → Git folder* → URL HTTPS de tu repo.
 3. **Cómputo**: serverless (o un cluster con Databricks Runtime 15.4 LTS o superior), con acceso a PyPI.
-4. **Abrir** `databricks/demo_data_contract_ded`, elegir los widgets y **Run all**:
+4. **Abrir** `databricks/aplicar_contrato`, completar los widgets y **Run all**:
+   - `contrato`: ruta del contrato, p. ej. `contracts/landing_ded/de_maestro_canal.odcs.yaml`.
    - `ambiente`: `desa` o `prod` (servidor del contrato).
-   - `escenario`: `ok` o `errores`.
+   - `archivo`: CSV de entrada, p. ej. `data/sample/de_maestro_canal_ok.csv` o `..._errores.csv`.
 
-| Escenario | Qué pasa |
+Los mismos parámetros sirven como `base_parameters` de un Job.
+
+| Contrato · archivo | Qué pasa |
 |---|---|
-| `ok` | Crea la tabla si no existe (o agrega columnas opcionales nuevas del contrato), el gate pasa (39 checks), carga 8 filas y la validación post-carga pasa. |
-| `errores` | El gate falla con 8 checks en rojo y el notebook se detiene **antes de escribir**: la tabla conserva sus datos vigentes. |
+| `de_maestro_canal` · `_ok.csv` | Crea `desa_landing.dataentry_int.de_maestro_canal` si no existe, el gate pasa (40 checks), carga 8 filas y la validación post-carga pasa. |
+| `de_maestro_canal` · `_errores.csv` | El gate falla con 5 checks (PK duplicada, 2 nulos, valor fuera de catálogo, canal con dos descripciones) y se detiene **antes de escribir**: la tabla conserva sus filas. |
+| `ded_tarifario_prestacion` · `_ok.csv` | Gate 39/39, carga 8 filas en `desa_landing.prestaciones_tarifarios.ded_tarifario_prestacion`. |
 
 La estructura de la tabla nunca se recrea. Si el contrato agrega una columna **opcional**, se aplica con
 `ALTER TABLE ADD COLUMNS`. Cualquier otra diferencia (columna eliminada, tipo distinto, columna nueva obligatoria)
