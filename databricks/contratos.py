@@ -1,8 +1,9 @@
 """Utilidades para aplicar un contrato ODCS en Databricks, reutilizables por cualquier capa.
 
 Convención de nombres (se valida contra el contrato):
-    catálogo = <ambiente>_<capa>          (customProperty `capa`)
-    esquema  = <dominio>_<subdominio>     (campo ODCS `domain` + customProperty `subdominio`)
+    catálogo = <ambiente>_<capa>   (customProperty `capa`, en minúsculas)
+    esquema  = el que declara el documento de alcance, tal cual. Si el contrato viene de un DED,
+               debe coincidir con su SCHEMA LANDING (customProperty `schemaLanding`).
 El servidor del contrato con id = <ambiente> (p. ej. `desa`, `prod`) declara ese catálogo y esquema.
 """
 
@@ -27,11 +28,18 @@ def cargar_contrato(ruta, ambiente):
         raise ContratoError(f"El contrato {contrato['id']} no declara un servidor databricks '{ambiente}'.")
 
     props = {p["property"]: p["value"] for p in contrato.get("customProperties", [])}
-    esperado = (f"{ambiente}_{props.get('capa')}", f"{contrato.get('domain')}_{props.get('subdominio')}")
-    if (servidor["catalog"], servidor["schema"]) != esperado:
+    catalogo = f"{ambiente}_{str(props.get('capa', '')).lower()}"
+    if servidor.get("catalog") != catalogo:
         raise ContratoError(
-            f"El servidor '{ambiente}' apunta a {servidor['catalog']}.{servidor['schema']}, "
-            f"pero la convención exige {esperado[0]}.{esperado[1]} (<ambiente>_<capa>.<dominio>_<subdominio>)."
+            f"El servidor '{ambiente}' usa el catálogo {servidor.get('catalog')}, "
+            f"pero la convención exige {catalogo} (<ambiente>_<capa>)."
+        )
+    if not servidor.get("schema"):
+        raise ContratoError(f"El servidor '{ambiente}' no declara esquema.")
+    if props.get("schemaLanding") and servidor["schema"] != props["schemaLanding"]:
+        raise ContratoError(
+            f"El servidor '{ambiente}' usa el esquema {servidor['schema']}, pero el documento de alcance "
+            f"declara {props['schemaLanding']} (SCHEMA LANDING)."
         )
 
     modelo = contrato["schema"][0]

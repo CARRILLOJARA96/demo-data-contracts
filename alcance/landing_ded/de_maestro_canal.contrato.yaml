@@ -1,0 +1,53 @@
+# Complemento del DED alcance/landing_ded/de_maestro_canal.xlsx
+#
+# Contiene SOLO lo que el documento de alcance no cubre. Lo mantiene Plataforma de Datos.
+# Tabla, campos, nombres, tipos, llaves, DAC, clasificación y catálogos salen del DED.
+# El esquema de los servidores Databricks también sale del DED (SCHEMA LANDING), tal cual.
+# Catálogo de cada ambiente: <ambiente>_<capa>.
+
+version: 1.0.0
+status: draft
+tenant: empresa-seguros-demo
+dataProduct: maestro_canales
+
+servers:
+  - id: local
+    server: local
+    type: local
+    environment: dev
+    description: CSV local para probar el contrato sin Databricks.
+    format: csv
+    delimiter: ","
+    path: ./data/sample/de_maestro_canal.csv
+  - id: gate
+    server: gate
+    type: custom
+    environment: dev
+    description: Quality gate previo a la publicación (DataFrame de Spark como vista temporal).
+    customProperties:
+      - property: customType
+        value: dataframe
+  - id: desa
+    server: desa
+    type: databricks
+    environment: desa
+    description: Ambiente de desarrollo en Databricks (Unity Catalog).
+    catalog: desa_landing
+  - id: prod
+    server: prod
+    type: databricks
+    environment: prod
+    description: Ambiente productivo en Databricks (Unity Catalog).
+    catalog: prod_landing
+
+# Reglas de negocio que el DED no tiene dónde expresar
+quality:
+  - type: sql
+    query: >-
+      SELECT COUNT(*) FROM (SELECT cod_canal_venta FROM de_maestro_canal
+      GROUP BY cod_canal_venta HAVING COUNT(DISTINCT des_canal_venta) > 1)
+    mustBe: 0
+    name: canal_descripcion_unica
+    description: Cada código de canal de venta tiene una sola descripción.
+    dimension: consistency
+    severity: error

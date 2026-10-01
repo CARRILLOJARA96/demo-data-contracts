@@ -30,12 +30,15 @@ jobs:
       - name: Instalar Data Contract CLI
         run: pip install "datacontract-cli[excel,duckdb,csv]==1.2.2"
 
-      - name: 1 · Excel de alcance y YAML sincronizados
+      - name: 1 · Documentos de alcance y contratos sincronizados
         run: |
           chmod +x scripts/*.sh
           scripts/excel_a_contrato.sh
-          if ! git diff --exit-code -- contracts/; then
-            echo "::error::El YAML no coincide con el Excel de alcance. Ejecuta scripts/excel_a_contrato.sh y sube el resultado."
+          # status --porcelain detecta también contratos nuevos que no se subieron (git diff no los ve)
+          if [ -n "$(git status --porcelain -- contracts/)" ]; then
+            git status --short -- contracts/
+            git diff -- contracts/
+            echo "::error::El contrato no coincide con su documento de alcance. Ejecuta scripts/excel_a_contrato.sh y sube el resultado (o corrige los errores que muestra)."
             exit 1
           fi
 
