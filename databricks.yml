@@ -1,0 +1,41 @@
+# Databricks Asset Bundle: despliega los jobs que aplican los data contracts por ambiente.
+#
+# El host y las credenciales NO van aquí (el repo es público):
+#   - local:  databricks bundle deploy -t desa --profile <tu-perfil>
+#   - CI:     variables de entorno DATABRICKS_HOST y DATABRICKS_TOKEN
+#
+# Cada target despliega en su propia carpeta del workspace y aplica los contratos contra su
+# servidor ODCS (desa → catálogos desa_*, prod → catálogos prod_*).
+
+bundle:
+  name: demo-data-contracts
+
+include:
+  - resources/*.yml
+
+# Lo que se sube al workspace: el repo menos lo ignorado por git. Además, por si cambia el .gitignore,
+# los documentos reales y lo local nunca se suben.
+sync:
+  exclude:
+    - doc-privado/**
+    - privado/**
+    - CLAUDE.md
+    - .vscode/**
+
+variables:
+  ambiente:
+    description: Servidor del contrato (ambiente) donde se aplican los contratos.
+
+targets:
+  desa:
+    default: true
+    mode: development
+    variables:
+      ambiente: desa
+
+  prod:
+    mode: production
+    variables:
+      ambiente: prod
+    workspace:
+      root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/${bundle.target}

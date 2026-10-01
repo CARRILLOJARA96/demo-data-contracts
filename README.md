@@ -44,6 +44,7 @@ DDL, la documentación, los controles de CI y la validación de datos en Databri
 | `databricks/contratos.py` | Módulo reutilizable: resolver la tabla del ambiente, DDL no destructivo, gate, carga. |
 | `databricks/aplicar_contrato.py` | **Notebook genérico**: aplica cualquier contrato (estructura → gate → carga → validación post-carga). |
 | `databricks/demo_data_contract_ded.py` | Notebook de ejemplo fijo para tarifario (widgets `ambiente` y `escenario`). |
+| `databricks.yml`, `resources/` | **Databricks Asset Bundle**: targets `desa`/`prod` y el job que aplica los contratos. |
 | `.github/workflows/data-contracts.yml` | Pipeline de CI para cada PR. |
 
 ## Qué toma el conversor del DED
@@ -169,6 +170,29 @@ La estructura de la tabla nunca se recrea. Si el contrato agrega una columna **o
 `ALTER TABLE ADD COLUMNS`. Cualquier otra diferencia (columna eliminada, tipo distinto, columna nueva obligatoria)
 detiene el proceso: son cambios incompatibles que el CI ya bloquea en el PR.
 
+## 4 · Desplegar por ambiente con Databricks Asset Bundle
+
+`databricks.yml` define dos targets y `resources/aplicar_contratos_landing.job.yml` un job con **una tarea por
+contrato**, todas con el notebook genérico (serverless):
+
+| Target | Modo | Carpeta del workspace | Tablas |
+|---|---|---|---|
+| `desa` (por defecto) | `development`: el job se llama `[dev <usuario>] aplicar_contratos_landing` | `~/.bundle/demo-data-contracts/desa` | `desa_landing.*` |
+| `prod` | `production` | `~/.bundle/demo-data-contracts/prod` | `prod_landing.*` |
+
+Requiere el [Databricks CLI](https://docs.databricks.com/dev-tools/cli/install.html) autenticado
+(`databricks auth login --host <url-del-workspace> --profile <perfil>`). El host **no** va en el repo:
+
+```bash
+databricks bundle validate -t desa --profile <perfil>
+databricks bundle deploy   -t desa --profile <perfil>     # sube el código y crea/actualiza el job
+databricks bundle run      -t desa --profile <perfil> aplicar_contratos_landing
+# lo mismo con -t prod
+```
+
+Para agregar un contrato al job: copiar una tarea en el `.job.yml` y cambiar `task_key`, `contrato` y `archivo`.
+El bundle sube el repo menos lo ignorado por git; además excluye explícitamente `doc-privado/` y `privado/`.
+
 ---
 
 ## Notas y límites
@@ -183,6 +207,9 @@ detiene el proceso: son cambios incompatibles que el CI ya bloquea en el PR.
   por eso el contrato también la valida como regla de calidad).
 - En serverless (entorno por defecto con pandas 1.5) el notebook instala también `pandas>=2.2,<3`: el motor de
   validación del CLI (ibis 12) lo necesita. Sin eso, los checks de datos fallan con `OptionError: No such option`.
+- El exportador SQL de `datacontract-cli` 1.2.2 ignora el servidor del `DataContract` y usa el primer servidor
+  Databricks del contrato salvo que se le pase `server=` al exportar. `databricks/contratos.py` lo pasa y además
+  verifica que el DDL apunte a la tabla del ambiente antes de ejecutarlo.
 - Versión fijada: `datacontract-cli==1.2.2`, ODCS `v3.2.0`.
 
 ## Licencias
