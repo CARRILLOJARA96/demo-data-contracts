@@ -13,3 +13,6 @@ CLAUDE.local.md
 # Documentos reales de la empresa: NUNCA al repo
 doc-privado/
 privado/
+
+# Configuración personal del editor
+.vscode/
